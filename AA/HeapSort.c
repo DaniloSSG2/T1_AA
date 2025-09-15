@@ -3,15 +3,16 @@
 #include <time.h>
 #include <math.h>
 
-// Função para trocar os elementos do vetor
-void Swap(int *a, int *b){
+// Função para trocar dois elementos
+void Swap(int *a, int *b) {
     int temp = *a;
     *a = *b;
     *b = temp;
 }
 
-void MaxHeapify(int array[], int n, int i){
-    int maior = i; // raiz
+// Ajusta a heap
+void MaxHeapify(int array[], int n, int i) {
+    int maior = i;
     int esq = 2*i + 1;
     int dir = 2*i + 2;
 
@@ -21,24 +22,24 @@ void MaxHeapify(int array[], int n, int i){
     if (dir < n && array[dir] > array[maior])
         maior = dir;
 
-    if (maior != i){
+    if (maior != i) {
         Swap(&array[i], &array[maior]);
         MaxHeapify(array, n, maior);
     }
 }
 
+// Função principal do HeapSort
 void HeapSort(int array[], int n) {
-    // Monta max heap
     for (int i = n / 2 - 1; i >= 0; i--)
         MaxHeapify(array, n, i);
 
-    // Extrai elementos
-    for (int i = n - 1; i > 0; i--){
+    for (int i = n - 1; i > 0; i--) {
         Swap(&array[0], &array[i]);
         MaxHeapify(array, i, 0);
     }
 }
 
+// Função potência
 int potencia(int base, int exp) {
     int resultado = 1;
     for (int i = 0; i < exp; i++)
@@ -46,7 +47,7 @@ int potencia(int base, int exp) {
     return resultado;
 }
 
-// Função para calcular a média
+// Média
 double media(double valores[], int n) {
     double soma = 0.0;
     for (int i = 0; i < n; i++)
@@ -54,7 +55,7 @@ double media(double valores[], int n) {
     return soma / n;
 }
 
-// Função para calcular a mediana
+// Mediana
 double mediana(double valores[], int n) {
     double *copia = malloc(n * sizeof(double));
     if (!copia) return -1;
@@ -82,7 +83,7 @@ double mediana(double valores[], int n) {
     return med;
 }
 
-// Função para calcular desvio padrão
+// Desvio padrão
 double desvioPadrao(double valores[], int n) {
     double m = media(valores, n);
     double soma = 0.0;
@@ -92,90 +93,75 @@ double desvioPadrao(double valores[], int n) {
 }
 
 int main() {
-    int exp = 10;
-    double arrayT[100];
-    int tam = potencia(4, exp);
+    srand(time(NULL));
 
-    printf("Tamanho do array = %d\n", tam);
+    int repeticoes = 15; // repetições por caso/tamanho
+    double *tempos = malloc(repeticoes * sizeof(double));
 
-    int *array = malloc(tam * sizeof(int));
-    if (!array) {
-        printf("Erro ao alocar memória\n");
+    if (!tempos) {
+        printf("Erro ao alocar memoria.\n");
         return 1;
     }
 
-    clock_t inicio, fim;
-    int opt;
+    // Testa para potências de 10 (10^2 até 10^6)
+    for (int exp = 0; exp <= 6; exp++) {
+        int tam = potencia(10, exp);
+        printf("\n===== Testando com n = 10^%d (%d elementos) =====\n", exp, tam);
 
-    printf("1-Melhor Caso\n2-Pior Caso\n3-Caso Medio\n");
-    scanf("%d", &opt);
+        int *array = malloc(tam * sizeof(int));
+        if (!array) {
+            printf("Erro ao alocar array de tamanho %d\n", tam);
+            continue;
+        }
 
-    srand(time(NULL)); // inicializa gerador aleatório
+        // --- Melhor caso (vetor crescente)
+        for (int r = 0; r < repeticoes; r++) {
+            for (int i = 0; i < tam; i++)
+                array[i] = i + 1;
 
-    int count = 0;
-    switch(opt){
-        case 1:
-            printf("Selecionado: Melhor Caso\n");
-            count = 0;
-            while(count < 100){
-                for(int i = 0; i < tam; i++){
-                    array[i] = i + 1; // vetor crescente
-                }
-                inicio = clock();
-                HeapSort(array, tam);
-                fim = clock();
+            clock_t inicio = clock();
+            HeapSort(array, tam);
+            clock_t fim = clock();
 
-                arrayT[count] = ((double)(fim - inicio)) / CLOCKS_PER_SEC;
-                count++;
-            }
-            break;
+            tempos[r] = (double)(fim - inicio) / CLOCKS_PER_SEC;
+        }
+        printf("\nMelhor caso:\n");
+        printf("Media = %.6f s | Mediana = %.6f s | Desvio Padrao = %.6f s\n",
+               media(tempos, repeticoes), mediana(tempos, repeticoes), desvioPadrao(tempos, repeticoes));
 
-        case 2:
-            printf("Selecionado: Pior Caso\n");
-            count = 0;
-            while(count < 100){
-                for(int i = 0; i < tam; i++){
-                    array[i] = tam - i; // vetor decrescente
-                }
-                inicio = clock();
-                HeapSort(array, tam);
-                fim = clock();
+        // --- Pior caso (vetor decrescente)
+        for (int r = 0; r < repeticoes; r++) {
+            for (int i = 0; i < tam; i++)
+                array[i] = tam - i;
 
-                arrayT[count] = ((double)(fim - inicio)) / CLOCKS_PER_SEC;
-                count++;
-            }
-            break;
+            clock_t inicio = clock();
+            HeapSort(array, tam);
+            clock_t fim = clock();
 
-        case 3:
-            printf("Selecionado: Caso Medio\n");
-            count = 0;
-            while(count < 100){
-                for(int i = 0; i < tam; i++){
-                    array[i] = rand() % tam; // valores aleatórios
-                }
-                inicio = clock();
-                HeapSort(array, tam);
-                fim = clock();
+            tempos[r] = (double)(fim - inicio) / CLOCKS_PER_SEC;
+        }
+        printf("\nPior caso:\n");
+        printf("Media = %.6f s | Mediana = %.6f s | Desvio Padrao = %.6f s\n",
+               media(tempos, repeticoes), mediana(tempos, repeticoes), desvioPadrao(tempos, repeticoes));
 
-                arrayT[count] = ((double)(fim - inicio)) / CLOCKS_PER_SEC;
-                count++;
-            }
-            break;
+        // --- Caso médio (aleatório)
+        for (int r = 0; r < repeticoes; r++) {
+            for (int i = 0; i < tam; i++)
+                array[i] = rand() % tam;
 
-        default:
-            printf("ERRO: NUMERO INVALIDO!!!!!!!!!\n");
-            free(array);
-            return 1;
+            clock_t inicio = clock();
+            HeapSort(array, tam);
+            clock_t fim = clock();
+
+            tempos[r] = (double)(fim - inicio) / CLOCKS_PER_SEC;
+        }
+        printf("\nCaso medio:\n");
+        printf("Media = %.6f s | Mediana = %.6f s | Desvio Padrao = %.6f s\n",
+               media(tempos, repeticoes), mediana(tempos, repeticoes), desvioPadrao(tempos, repeticoes));
+
+        free(array);
     }
 
-    printf("Tempos de execucao (100 repeticoes):\n");
-    for (int i = 0; i < 100; i++) {
-        printf("%f segundos\n", arrayT[i]);
-    }
-    printf("\nMedia = %.6f segundos\n", media(arrayT, 100));
-    printf("Mediana = %.6f segundos\n", mediana(arrayT, 100));
-    printf("Desvio padrao = %.6f segundos\n", desvioPadrao(arrayT, 100));
-
-    free(array);
+    free(tempos);
     return 0;
 }
