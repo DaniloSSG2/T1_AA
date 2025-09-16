@@ -10,15 +10,11 @@ void trocar(int *a, int *b) {
     *b = temp;
 }
 
-// Partição com pivô aleatório
-int particionar(int arr[], int baixo, int alto) {
-    // Escolhe pivô aleatório e troca com o último
-    int indicePivo = baixo + rand() % (alto - baixo + 1);
-    trocar(&arr[indicePivo], &arr[alto]);
-
+// --- Particionamentos ---
+// Pior caso (pivô = último elemento)
+int particionarPior(int arr[], int baixo, int alto) {
     int pivo = arr[alto];
     int i = baixo - 1;
-
     for (int j = baixo; j < alto; j++) {
         if (arr[j] <= pivo) {
             i++;
@@ -29,12 +25,44 @@ int particionar(int arr[], int baixo, int alto) {
     return i + 1;
 }
 
-// Função principal do QuickSort
-void quickSort(int arr[], int baixo, int alto) {
+// Melhor caso (pivô = elemento do meio)
+int particionarMelhor(int arr[], int baixo, int alto) {
+    int meio = (baixo + alto) / 2;
+    trocar(&arr[meio], &arr[alto]);
+    int pivo = arr[alto];
+    int i = baixo - 1;
+    for (int j = baixo; j < alto; j++) {
+        if (arr[j] <= pivo) {
+            i++;
+            trocar(&arr[i], &arr[j]);
+        }
+    }
+    trocar(&arr[i + 1], &arr[alto]);
+    return i + 1;
+}
+
+// Caso médio (pivô aleatório)
+int particionarMedio(int arr[], int baixo, int alto) {
+    int indicePivo = baixo + rand() % (alto - baixo + 1);
+    trocar(&arr[indicePivo], &arr[alto]);
+    int pivo = arr[alto];
+    int i = baixo - 1;
+    for (int j = baixo; j < alto; j++) {
+        if (arr[j] <= pivo) {
+            i++;
+            trocar(&arr[i], &arr[j]);
+        }
+    }
+    trocar(&arr[i + 1], &arr[alto]);
+    return i + 1;
+}
+
+// --- Funções QuickSort ---
+void quickSort(int arr[], int baixo, int alto, int (*particionar)(int[], int, int)) {
     if (baixo < alto) {
         int pi = particionar(arr, baixo, alto);
-        quickSort(arr, baixo, pi - 1);
-        quickSort(arr, pi + 1, alto);
+        quickSort(arr, baixo, pi - 1, particionar);
+        quickSort(arr, pi + 1, alto, particionar);
     }
 }
 
@@ -58,6 +86,7 @@ double mediana(double valores[], int n) {
     if (!copia) return -1;
     for (int i = 0; i < n; i++) copia[i] = valores[i];
 
+    // insertion sort simples
     for (int i = 1; i < n; i++) {
         double chave = copia[i];
         int j = i - 1;
@@ -84,7 +113,7 @@ double desvioPadrao(double valores[], int n) {
         soma += (valores[i] - m) * (valores[i] - m);
     return sqrt(soma / n);
 }
-//quickSort(array, 0, n - 1);
+
 int main() {
     srand(time(NULL));
 
@@ -96,7 +125,7 @@ int main() {
         return 1;
     }
 
-    // Testa para potências de 10 (10^2 até 10^6)
+    // Testa para potências de 10 (10^0 até 10^6)
     for (int exp = 0; exp <= 6; exp++) {
         int tam = potencia(10, exp);
         printf("\n===== Testando com n = 10^%d (%d elementos) =====\n", exp, tam);
@@ -107,13 +136,12 @@ int main() {
             continue;
         }
 
-        // --- Melhor caso (vetor crescente)
+        // --- Melhor caso ---
         for (int r = 0; r < repeticoes; r++) {
-            for (int i = 0; i < tam; i++)
-                array[i] = i + 1;
+            for (int i = 0; i < tam; i++) array[i] = i + 1;
 
             clock_t inicio = clock();
-            quickSort(array, 0, tam - 1);
+            quickSort(array, 0, tam - 1, particionarMelhor);
             clock_t fim = clock();
 
             tempos[r] = (double)(fim - inicio) / CLOCKS_PER_SEC;
@@ -122,13 +150,12 @@ int main() {
         printf("Media = %.6f s | Mediana = %.6f s | Desvio Padrao = %.6f s\n",
                media(tempos, repeticoes), mediana(tempos, repeticoes), desvioPadrao(tempos, repeticoes));
 
-        // --- Pior caso (vetor decrescente)
+        // --- Pior caso ---
         for (int r = 0; r < repeticoes; r++) {
-            for (int i = 0; i < tam; i++)
-                array[i] = tam - i;
+            for (int i = 0; i < tam; i++) array[i] = i + 1; // vetor crescente (ruim p/ pivô = último)
 
             clock_t inicio = clock();
-            quickSort(array, 0, tam - 1);
+            quickSort(array, 0, tam - 1, particionarPior);
             clock_t fim = clock();
 
             tempos[r] = (double)(fim - inicio) / CLOCKS_PER_SEC;
@@ -137,13 +164,12 @@ int main() {
         printf("Media = %.6f s | Mediana = %.6f s | Desvio Padrao = %.6f s\n",
                media(tempos, repeticoes), mediana(tempos, repeticoes), desvioPadrao(tempos, repeticoes));
 
-        // --- Caso médio (aleatório)
+        // --- Caso médio ---
         for (int r = 0; r < repeticoes; r++) {
-            for (int i = 0; i < tam; i++)
-                array[i] = rand() % tam;
+            for (int i = 0; i < tam; i++) array[i] = rand() % tam;
 
             clock_t inicio = clock();
-            quickSort(array, 0, tam - 1);
+            quickSort(array, 0, tam - 1, particionarMedio);
             clock_t fim = clock();
 
             tempos[r] = (double)(fim - inicio) / CLOCKS_PER_SEC;
